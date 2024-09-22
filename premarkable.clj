@@ -53,7 +53,10 @@
           [:title "Preview"]
           [:style (h/raw (slurp css))]]
          [:body.normal
-          [:div#wrapper {:style (when max-width (format "max-width: %dpx;" max-width))}
+          [:div#wrapper {:style
+                         (str
+                          (when max-width (format "max-width: %dpx; " max-width))
+                          "margin: 0 auto")}
            (h/raw
             (slurp (markdown-to-html-stream options)))]]])))
 
