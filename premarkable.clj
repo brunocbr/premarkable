@@ -39,8 +39,8 @@
   [{:keys [source processor-args]}]
   (let [pandoc-process (process (concat processor-args
                                         [source])
-                                {:out :pipe})]
-    (-> pandoc-process check :out)))
+                                {:out :string})]
+    (-> @pandoc-process :out)))
 
 (defn render-html-document [{:keys [css max-width] :as options}]
   (str (h/html
@@ -58,7 +58,7 @@
                           (when max-width (format "max-width: %dpx; " max-width))
                           "margin: 0 auto")}
            (h/raw
-            (slurp (markdown-to-html-stream options)))]]])))
+            (markdown-to-html-stream options))]]])))
 
 (def routes [{:path "/"
               :method :get
