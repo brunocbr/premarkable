@@ -1,8 +1,7 @@
 #!/usr/bin/env bb
-
 (ns ^{:author "Bruno Loureiro Conte"
       :doc "A simple previewer for Markdown and other plain text files"}
-    premarkable.core
+ premarkable.core
   (:require [org.httpkit.server :as http]
             [ruuter.core :as ruuter]
             [babashka.process :refer [process check]]
@@ -34,7 +33,6 @@
    ["-h" "--help" "Show help"]
    ["-w" "--max-width N" "Limit text width in Preview (px)"
     :default nil :parse-fn #(Integer/parseInt %)]])
-
 
 (defn markdown-to-html-stream
   "Converts a Markdown file to HTML using Pandoc and returns the HTML as a stream."
@@ -68,7 +66,7 @@
 (defn -main [& args]
   (println "premarkable - A simple Markdown previewer")
   (println "=========================================")
-  (let [{:keys [options arguments summary errors]}
+  (let [{:keys [options arguments summary]}
         (cli/parse-opts args cli-options)]
     (if (:help options)
       (println summary)
@@ -78,7 +76,7 @@
           (println "- CSS path:" css)
           (println "- Source path:" source)
           (println "- Processor arguments:" processor)
-          ;; Add your processing logic here
+
           (reset! config {:source source
                           :css css
                           :max-width max-width
