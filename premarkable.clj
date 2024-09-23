@@ -4,7 +4,7 @@
  premarkable.core
   (:require [org.httpkit.server :as http]
             [ruuter.core :as ruuter]
-            [babashka.process :refer [process check]]
+            [babashka.process :refer [process]]
             [clojure.tools.cli :as cli]
             [hiccup2.core :as h]
             [clojure.string :as str]))
