@@ -4,7 +4,8 @@
  premarkable.core
   (:require [org.httpkit.server :as http]
             [ruuter.core :as ruuter]
-            [babashka.process :refer [process]]
+            [babashka.process :refer [shell]]
+            [babashka.fs :as fs]
             [clojure.tools.cli :as cli]
             [hiccup2.core :as h]
             [clojure.string :as str]))
@@ -12,6 +13,17 @@
 (defonce config (atom {}))
 
 (def default-pandoc-args ["env" "pandoc" "-f" "markdown" "-t" "html" "-s"])
+
+;; Atom to store the processed content
+(def pandoc-content (atom nil))
+
+;; Atom to store the timestamp of the input file
+(def input-file-timestamp (atom nil))
+
+;; Function to check if the file has been modified
+(defn file-modified? [file]
+  (let [last-modified (fs/last-modified-time file)]
+    (not= @input-file-timestamp last-modified)))
 
 (defn parse-args [arg-str]
   (re-seq #"\"[^\"]*\"|\S+" arg-str))
@@ -34,13 +46,23 @@
    ["-w" "--max-width N" "Limit text width in Preview (px)"
     :default nil :parse-fn #(Integer/parseInt %)]])
 
-(defn markdown-to-html-stream
-  "Converts a Markdown file to HTML using Pandoc and returns the HTML as a stream."
+(defn process-pandoc
   [{:keys [source processor-args]}]
-  (let [pandoc-process (process (concat processor-args
-                                        [source])
-                                {:out :string})]
-    (-> @pandoc-process :out)))
+  (let [result (shell {:out :string}
+                      (str/join " " (concat processor-args [source])))]
+    (when (zero? (:exit result))  ;; Checks if Pandoc executed correctly
+      (reset! pandoc-content (:out result))
+      (reset! input-file-timestamp (fs/last-modified-time source)))))
+
+;; Function to monitor the file and update the content every 5 seconds
+(defn monitor-file [input]
+  (while true
+    (if (file-modified? input)
+      (do
+        (println "File modified, updating...")
+        (process-pandoc @config)
+        (println "Content updated")))
+    (Thread/sleep 5000)))  ;; Waits 5 seconds before checking again
 
 (defn render-html-document [{:keys [css max-width] :as options}]
   (str (h/html
@@ -58,13 +80,16 @@
                           (when max-width (format "max-width: %dpx; " max-width))
                           "margin: 0 auto")}
            (h/raw
-            (markdown-to-html-stream options))]]])))
+            @pandoc-content)]]])))
 
 (def routes [{:path "/"
               :method :get
               :response (fn [_]
-                          {:status 200
-                           :body (render-html-document @config)})}])
+                          (if @pandoc-content
+                            {:status 200
+                             :body (render-html-document @config)}
+                            {:status 200
+                             :body "Content not processed yet"}))}])
 
 (defn -main [& args]
   (println "premarkable - A simple Markdown previewer")
@@ -86,6 +111,7 @@
                           :processor-args processor})
           (http/run-server #(ruuter/route routes %) {:port http-port})
           (println "The server is now running on" (format "http://localhost:%s/" http-port))
+          (future (monitor-file source))
           @(promise))))))
 
 (apply -main *command-line-args*)
