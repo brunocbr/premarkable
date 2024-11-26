@@ -82,6 +82,48 @@
            (h/raw
             @pandoc-content)]]])))
 
+(defn render-loading-page []
+  (str (h/html
+        [:head
+         [:meta {:charset "UTF-8"}]
+         [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
+         [:meta {:http-equiv "refresh" :content "2"}]
+         [:title "Rendering in Progress"]
+         [:style "
+       body {
+         font-family: Arial, sans-serif;
+         text-align: center;
+         padding: 2rem;
+         background-color: #f9f9f9;
+       }
+       .logo {
+         width: 200px;
+         margin: 1rem auto;
+       }
+       .message {
+         font-size: 1.2rem;
+         color: #555;
+         margin-top: 1rem;
+       }
+       .spinner {
+         border: 4px solid #f3f3f3;
+         border-top: 4px solid #555;
+         border-radius: 50%;
+         width: 40px;
+         height: 40px;
+         animation: spin 1s linear infinite;
+         margin: 1rem auto;
+       }
+       @keyframes spin {
+         0% { transform: rotate(0deg); }
+         100% { transform: rotate(360deg); }
+       }
+     "]]
+        [:body
+         [:div
+          [:div.spinner]
+          [:p.message "Your document is being rendered. Please wait..."]]])))
+
 (def routes [{:path "/"
               :method :get
               :response (fn [_]
@@ -89,7 +131,7 @@
                             {:status 200
                              :body (render-html-document @config)}
                             {:status 200
-                             :body "Content not processed yet"}))}])
+                             :body (render-loading-page)}))}])
 
 (defn -main [& args]
   (println "premarkable - A simple Markdown previewer")
