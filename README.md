@@ -4,7 +4,7 @@
 
 ## A Simple Markdown Previewer
 
-Premarkable is a lightweight Markdown previewer inspired by the excellent Marked App for the Mac. It allows you to view your Markdown files rendered as HTML in real-time, making it easy to write and preview your content without the need for constant saving and refreshing.
+Premarkable is a lightweight Markdown previewer inspired by the excellent Marked App for the Mac. It allows you to view your Markdown files rendered as HTML in real-time, making it easy to write and preview your content.
 
 ### Features
 
@@ -62,10 +62,14 @@ Premarkable will automatically detect changes to your Markdown file every 5 seco
 
 If you would like to contribute to Premarkable, feel free to fork the repository and submit a pull request. Suggestions and improvements are welcome!
 
+#### To do
+
+- Implement automatic refreshing via Websockets.
+
 ### License
 
 Premarkable is released under the MIT License. See the [LICENSE](LICENSE) file for more information.
 
 ### Acknowledgments
 
-Inspired by [Marked App](https://marked2app.com/), Premarkable brings an open-source alternative for Markdown previewing that runs on any platform.
+Inspired by [Marked App](https://marked2app.com/), Premarkable brings an open-source alternative for Markdown previewing that runs on many platforms.
