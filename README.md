@@ -62,10 +62,6 @@ Premarkable will automatically detect changes to your Markdown file every 5 seco
 
 If you would like to contribute to Premarkable, feel free to fork the repository and submit a pull request. Suggestions and improvements are welcome!
 
-#### To do
-
-- Implement automatic refreshing via Websockets.
-
 ### License
 
 Premarkable is released under the MIT License. See the [LICENSE](LICENSE) file for more information.
