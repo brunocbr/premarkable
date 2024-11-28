@@ -20,6 +20,9 @@
 ;; Atom to store the timestamp of the input file
 (def input-file-timestamp (atom nil))
 
+;; This will hold the WebSocket connection
+(def ws-clients (atom nil))
+
 ;; Function to check if the file has been modified
 (defn file-modified? [file]
   (let [last-modified (fs/last-modified-time file)]
@@ -54,6 +57,21 @@
       (reset! pandoc-content (:out result))
       (reset! input-file-timestamp (fs/last-modified-time source)))))
 
+(defn ws-handler [req]
+  (if-not (:websocket? req)
+    {:status 200 :headers {"content-type" "text/html"} :body "Connect WebSockets to this URL."}
+    (http/as-channel req
+                     {:on-open (fn [ch] ((println "Browser connected")
+                                        (swap! ws-clients
+                                               conj ch)))
+                      :on-close (fn [ch _status-code]
+                                  ((println "Browser disconnected")
+                                   (swap! ws-clients disj ch)))})))
+
+(defn ws-refresh! []
+  (doseq [ch @ws-clients]
+    (http/send! ch "update")))
+
 ;; Function to monitor the file and update the content every 5 seconds
 (defn monitor-file [input]
   (while true
@@ -61,8 +79,11 @@
       (do
         (println "File modified, updating...")
         (process-pandoc @config)
-        (println "Content updated")))
-    (Thread/sleep 5000)))  ;; Waits 5 seconds before checking again
+        (println "Content updated")
+        (when @ws-clients
+          (println "Triggering browser refresh")
+          (ws-refresh!)))
+      (Thread/sleep 5000))))  ;; Waits 5 seconds before checking again
 
 (defn render-html-document [{:keys [css max-width] :as options}]
   (str (h/html
@@ -73,6 +94,15 @@
           [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge,chrome=1"}]
           [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
           [:title "Preview"]
+          (h/raw
+           "<script>
+               const ws = new WebSocket('ws://' + window.location.host + '/ws');
+               ws.onmessage = function(event) {
+                 if (event.data === 'update') {
+                   window.location.reload();
+                 }
+               };
+           </script>")
           [:style (h/raw (slurp css))]]
          [:body.normal
           [:div#wrapper {:style
@@ -131,7 +161,10 @@
                             {:status 200
                              :body (render-html-document @config)}
                             {:status 200
-                             :body (render-loading-page)}))}])
+                             :body (render-loading-page)}))}
+             {:path "/ws"
+              :method :get
+              :response ws-handler}])
 
 (defn -main [& args]
   (println "premarkable - A simple Markdown previewer")
