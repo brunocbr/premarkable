@@ -82,6 +82,17 @@
           (ws-refresh!)))
       (Thread/sleep 5000))))  ;; Waits 5 seconds before checking again
 
+(def ws-client-script
+  (h/raw
+   "<script>
+               const ws = new WebSocket('ws://' + window.location.host + '/ws');
+               ws.onmessage = function(event) {
+                 if (event.data === 'update') {
+                   window.location.reload();
+                 }
+               };
+           </script>"))
+
 (defn render-html-document [{:keys [css max-width] :as options}]
   (str (h/html
         (h/raw "<!DOCTYPE html>")
@@ -91,15 +102,7 @@
           [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge,chrome=1"}]
           [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
           [:title "Preview"]
-          (h/raw
-           "<script>
-               const ws = new WebSocket('ws://' + window.location.host + '/ws');
-               ws.onmessage = function(event) {
-                 if (event.data === 'update') {
-                   window.location.reload();
-                 }
-               };
-           </script>")
+          ws-client-script
           [:style (h/raw (slurp css))]]
          [:body.normal
           [:div#wrapper {:style
@@ -114,8 +117,8 @@
         [:head
          [:meta {:charset "UTF-8"}]
          [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
-         [:meta {:http-equiv "refresh" :content "2"}]
          [:title "Rendering in Progress"]
+         ws-client-script
          [:style "
        body {
          font-family: Arial, sans-serif;
