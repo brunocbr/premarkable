@@ -21,7 +21,7 @@
 (def input-file-timestamp (atom nil))
 
 ;; This will hold the WebSocket connection
-(def ws-clients (atom nil))
+(def ws-clients (atom #{}))
 
 ;; Function to check if the file has been modified
 (defn file-modified? [file]
@@ -61,12 +61,9 @@
   (if-not (:websocket? req)
     {:status 200 :headers {"content-type" "text/html"} :body "Connect WebSockets to this URL."}
     (http/as-channel req
-                     {:on-open (fn [ch] ((println "Browser connected")
-                                        (swap! ws-clients
-                                               conj ch)))
-                      :on-close (fn [ch _status-code]
-                                  ((println "Browser disconnected")
-                                   (swap! ws-clients disj ch)))})))
+                     {:on-open (fn [ch] (do (println "Browser connected")
+                                           (swap! ws-clients conj ch)))
+                      :on-close (fn [ch _status-code] (swap! ws-clients disj ch))})))
 
 (defn ws-refresh! []
   (doseq [ch @ws-clients]
