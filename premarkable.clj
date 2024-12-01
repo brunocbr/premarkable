@@ -51,11 +51,13 @@
 
 (defn process-pandoc
   [{:keys [source processor-args]}]
-  (let [result (shell {:out :string}
+  (let [last-modification (fs/last-modified-time source)
+        result (shell {:out :string}
                       (str/join " " (concat processor-args [source])))]
-    (when (zero? (:exit result))  ;; Checks if Pandoc executed correctly
-      (reset! pandoc-content (:out result))
-      (reset! input-file-timestamp (fs/last-modified-time source)))))
+    (do
+      (when (zero? (:exit result))  ;; Checks if Pandoc executed correctly
+        (reset! pandoc-content (:out result)))
+      (reset! input-file-timestamp last-modification))))
 
 (defn ws-handler [req]
   (if-not (:websocket? req)
