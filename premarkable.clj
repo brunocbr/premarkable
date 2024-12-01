@@ -52,11 +52,12 @@
 (defn process-pandoc
   [{:keys [source processor-args]}]
   (let [last-modification (fs/last-modified-time source)
-        result (shell {:out :string}
-                      (str/join " " (concat processor-args [source])))]
+        cmd (str/join " " (concat processor-args [(format "\"%s\"" source)]))
+        result (shell {:out :string} cmd)]
     (do
       (when (zero? (:exit result))  ;; Checks if Pandoc executed correctly
-        (reset! pandoc-content (:out result)))
+        (reset! pandoc-content (:out result))
+        (println "Content updated"))
       (reset! input-file-timestamp last-modification))))
 
 (defn ws-handler [req]
@@ -78,7 +79,6 @@
       (do
         (println "File modified, updating...")
         (process-pandoc @config)
-        (println "Content updated")
         (when @ws-clients
           (println "Triggering browser refresh")
           (ws-refresh!)))
@@ -105,7 +105,7 @@
           [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
           [:title "Preview"]
           ws-client-script
-          [:style (h/raw (slurp css))]]
+          (when (fs/exists? css) [:style (h/raw (slurp css))])]
          [:body.normal
           [:div#wrapper {:style
                          (str
