@@ -188,6 +188,6 @@
                           :processor-args processor})
           (http/run-server #(ruuter/route routes %) {:port http-port})
           (println "The server is now running on" (format "http://localhost:%s/" http-port))
-          @(promise (monitor-file source)))))))
+          (monitor-file source))))))
 
 (apply -main *command-line-args*)
